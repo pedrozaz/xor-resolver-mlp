@@ -43,7 +43,7 @@ public class Matrix {
     }
 
     public static Matrix trans(Matrix a) {
-        Matrix y = new Matrix(a.rows, a.cols);
+        Matrix y = new Matrix(a.cols, a.rows);
         for (int i = 0; i < a.rows; i++) {
             for (int j = 0; j < a.cols; j++) {
                 y.data[j][i] = a.data[i][j];
