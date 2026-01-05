@@ -1,53 +1,57 @@
 import nn.NeuralNetwork;
+import utils.MnistLoader;
 
+import java.util.Collections;
 import java.util.List;
-import java.util.Random;
 
 public class Main {
     public static void main(String[] args) {
-        NeuralNetwork nn = new NeuralNetwork(2, 3, 1);
+        try {
+            String trainImg = "data/train-images-idx3-ubyte";
+            String trainLbl = "data/train-labels-idx1-ubyte";
 
-        double[][] X = {
-                {0, 0},
-                {0, 1},
-                {1, 0},
-                {1, 1}
-        };
+            List<MnistLoader.MnistData> trainingSet = MnistLoader.load(trainImg, trainLbl, 5000);
 
-        double[][] Y = {
-                {0},
-                {1},
-                {1},
-                {0}
-        };
+            NeuralNetwork nn = new NeuralNetwork(784, 64, 10);
 
-        System.out.println("Training...");
+            System.out.println("Initializing train with 5000 images...");
 
-        int epochs = 50000;
-        Random random = new Random();
+            int epochs = 5;
 
-        for (int i = 0; i < epochs; i++) {
-            int index = random.nextInt(4);
+            for (int i = 0; i < epochs; i++) {
+                Collections.shuffle(trainingSet);
 
-            nn.train(X[index], Y[index]);
-
-            if ((i % 10000) == 0) {
-                System.out.println("Epoch " + i);
+                for (MnistLoader.MnistData item : trainingSet) {
+                    nn.train(item.data, item.label);
+                }
+                System.out.println("Epoch " + (i + 1) + " complete.");
             }
-        }
 
-        System.out.println("Training done.");
+            System.out.println("\n--- Inference Test ---");
+            int correct = 0;
+            int totalTest = 10;
 
-        System.out.println("XOR Results:");
-        for (double[] input : X) {
-            List<Double> output = nn.feedforward(input);
+            for (int i = 0; i < totalTest; i++) {
+                MnistLoader.MnistData sample = trainingSet.get(i);
+                List<Double> output = nn.feedforward(sample.data);
 
-            String i1 = String.format("%.0f", input[0]);
-            String i2 = String.format("%.0f", input[1]);
-            double prediction = output.get(0);
+                int predicted = 0;
+                double maxVal = -1;
+                for (int j = 0; j < output.size(); j++) {
+                    if (output.get(j) > maxVal) {
+                        maxVal = output.get(j);
+                        predicted = j;
+                    }
+                }
 
-            System.out.printf("[%s, %s] -> %.4f (Expected: %.0f)%n",
-                    i1, i2, prediction, (prediction > 0.5 ? 1.0 : 0.0));
+                System.out.println("Real: " + sample.labelDigit + " | Expected: " + predicted +
+                        " (Credibility: " + String.format("%.2f", maxVal) + ")");
+                if (predicted == sample.labelDigit) correct++;
+            }
+            System.out.println("Accuracy: " + (double) correct/totalTest);
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.err.println(e.getMessage());
         }
     }
 }
